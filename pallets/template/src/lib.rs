@@ -15,16 +15,17 @@ mod tests;
 #[cfg(feature = "runtime-benchmarks")]
 mod benchmarking;
 
-#[frame_support::pallet]
+#[frame_support::pallet]//定义功能模块
 pub mod pallet {
 	use frame_support::{dispatch::DispatchResult, pallet_prelude::*};
 	use frame_system::pallet_prelude::*;
 
 	/// Configure the pallet by specifying the parameters and types on which it depends.
-	#[pallet::config]
+	#[pallet::config]//定义功能模块所需要的配置接口，接口里包含依赖的配置信息等，每个功能模块都需要继承自系统模块
 	pub trait Config: frame_system::Config {
 		/// Because this pallet emits events, it depends on the runtime's definition of an event.
 		type Event: From<Event<Self>> + IsType<<Self as frame_system::Config>::Event>;
+		//这里的关联类型Event有2个类型约束，其既可以是当前Event的模块转化、且可以从系统event转换
 	}
 
 	#[pallet::pallet]
@@ -33,18 +34,20 @@ pub mod pallet {
 
 	// The pallet's runtime storage items.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage
-	#[pallet::storage]
-	#[pallet::getter(fn something)]
+	#[pallet::storage] //存储单元
+	#[pallet::getter(fn something)] //定义一个可选的getter函数，从而获取存储单元内容
 	// Learn more about declaring storage items:
 	// https://substrate.dev/docs/en/knowledgebase/runtime/storage#declaring-storage-items
-	pub type Something<T> = StorageValue<_, u32>;
+	pub type Something<T> = StorageValue<_, u32>; //类型别名是something，真实的类型是StorageValue，其有两个泛型参数，下划线和u32，这里T是不可以省略的
+	//下划线代表prefix前缀
+	//数据类型
 
 	// Pallets use events to inform users when important changes are made.
 	// https://substrate.dev/docs/en/knowledgebase/runtime/events
-	#[pallet::event]
+	#[pallet::event] //定义事件
 	#[pallet::metadata(T::AccountId = "AccountId")]
 	#[pallet::generate_deposit(pub(super) fn deposit_event)]
-	pub enum Event<T: Config> {
+	pub enum Event<T: Config> {//泛型参数T的约束是当前模块的配置接口
 		/// Event documentation should end with an array that provides descriptive names for event
 		/// parameters. [something, who]
 		SomethingStored(u32, T::AccountId),
@@ -69,9 +72,10 @@ pub mod pallet {
 	impl<T:Config> Pallet<T> {
 		/// An example dispatchable that takes a singles value as a parameter, writes the value to
 		/// storage and emits an event. This function must be dispatched by a signed extrinsic.
-		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))]
+		#[pallet::weight(10_000 + T::DbWeight::get().writes(1))] //表示do_something所需要的时间
 		pub fn do_something(origin: OriginFor<T>, something: u32) -> DispatchResult {
-			// Check that the extrinsic was signed and get the signer.
+			// 使用系统模块提供的ensur_signed，Check that the extrinsic was signed and get the signer.
+			// 是签名的话，将会放回交易发送方对应的account
 			// This function will return an error if the extrinsic is not signed.
 			// https://substrate.dev/docs/en/knowledgebase/runtime/origin
 			let who = ensure_signed(origin)?;
@@ -79,7 +83,7 @@ pub mod pallet {
 			// Update storage.
 			<Something<T>>::put(something);
 
-			// Emit an event.
+			// Emit an event.告诉客户端，逻辑成功了
 			Self::deposit_event(Event::SomethingStored(something, who));
 			// Return a successful DispatchResultWithPostInfo
 			Ok(())

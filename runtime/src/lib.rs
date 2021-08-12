@@ -245,7 +245,7 @@ impl pallet_balances::Config for Runtime {
 	type MaxLocks = MaxLocks;
 	/// The type for recording an account's balance.
 	type Balance = Balance;
-	/// The ubiquitous event type.
+	/// The ubiquitous【无处不在的】 event type.
 	type Event = Event;
 	type DustRemoval = ();
 	type ExistentialDeposit = ExistentialDeposit;
@@ -274,19 +274,57 @@ impl pallet_template::Config for Runtime {
 	type Event = Event;
 }
 
+// parameter_types! is used to define the constant values
+parameter_types! {
+	pub const NickReservationFee: u128 = 100;
+	pub const MinNickLength:usize = 8;
+	pub const MaxNickLength:usize = 32;
+}
+
+//这里需要为Runtime实现pallet_nicks的接口，我们需要去查看pallet_nicks的库，
+//里面定义的关联类型都需要实现
+impl pallet_nicks::Config for Runtime{
+	type Currency = Balances;
+	type ReservationFee = NickReservationFee;
+	//deposits 被没收时不采取任何措施
+	type Slashed = ();
+	// 配置：Frame系统original root作为Nick pallet的管理员。
+	type ForceOrigin = frame_system::EnsureRoot<AccountId>;
+
+	// use thoses things we configed in parameter_types
+	type MinLength = MinNickLength;
+	type MaxLength = MaxNickLength;
+	// and the event is everywhere
+	type Event = Event;
+
+}
+
 // Create the runtime by composing the FRAME pallets that were previously configured.
+// 通过组合先前配置的Frame pallet来创建运行时。
 construct_runtime!(
 	pub enum Runtime where
 		Block = Block,
 		NodeBlock = opaque::Block,
 		UncheckedExtrinsic = UncheckedExtrinsic
 	{
+		// index 0
 		System: frame_system::{Pallet, Call, Config, Storage, Event<T>},
+		// index 1
 		RandomnessCollectiveFlip: pallet_randomness_collective_flip::{Pallet, Call, Storage},
+		// index 2
 		Timestamp: pallet_timestamp::{Pallet, Call, Storage, Inherent},
+		// index 3
 		Aura: pallet_aura::{Pallet, Config<T>},
+		// index 4
 		Grandpa: pallet_grandpa::{Pallet, Call, Storage, Config, Event},
+		// index 5
 		Balances: pallet_balances::{Pallet, Call, Storage, Config<T>, Event<T>},
+		//Nicks is the name of pallet
+		// pallet_nicks is the name of the Rust crates that
+		// {xxxx,xxxx} is used to **export** them correctly in the metadata or to make the pallet usable in the runtime.
+		//测试:
+		//index 6
+		Nicks: pallet_nicks::{Pallet, Call, Storage, Event<T>},
 		TransactionPayment: pallet_transaction_payment::{Pallet, Storage},
 		Sudo: pallet_sudo::{Pallet, Call, Config<T>, Storage, Event<T>},
 		// Include the custom logic from the pallet-template in the runtime.
